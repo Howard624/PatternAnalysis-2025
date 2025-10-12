@@ -1,7 +1,7 @@
 import os
 import cv2
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader  # Add DataLoader import
 
 """
 OASIS Dataset Loader (Step 1)
@@ -128,21 +128,67 @@ class OASISDataset(Dataset):
 
 
 # ------------------------------
-# Test both components
+# Step 3: New DataLoader for Training
+# ------------------------------
+def create_dataloader(split="train", batch_size=8, shuffle=True, num_workers=2):
+    """
+    Creates a PyTorch DataLoader for batching and parallel loading.
+    
+    Args:
+        split (str): Dataset split ("train", "test", "validate")
+        batch_size (int): Number of samples per batch (adjust based on GPU memory)
+        shuffle (bool): Whether to shuffle samples (use True for training, False for test)
+        num_workers (int): Number of parallel processes for loading (2-4 recommended)
+    
+    Returns:
+        DataLoader: Ready-to-use loader for training/evaluation
+    """
+    # Use Step 2's Dataset class to create the dataset
+    dataset = OASISDataset(split=split)
+    
+    # Create DataLoader to handle batching, shuffling, and parallel loading
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=True  # Faster transfer to GPU if available
+    )
+    
+    return dataloader
+
+
+# ------------------------------
+# Test All Steps (1, 2, 3)
 # ------------------------------
 if __name__ == "__main__":
-    # Test Step 1: Single sample loader
-    print("=== Testing Single Sample Loader ===")
+    # Test Step 1
+    print("=== Testing Step 1: Single Sample Loader ===")
     load_single_sample(split="train")
     
-    # Test Step 2: PyTorch Dataset
-    print("\n=== Testing PyTorch Dataset ===")
+    # Test Step 2
+    print("\n=== Testing Step 2: OASISDataset ===")
     dataset = OASISDataset(split="train")
-    print(f"Total samples in dataset: {len(dataset)}")
-    
-    # Get first sample from dataset
+    print(f"Total samples: {len(dataset)}")
     img_tensor, seg_tensor = dataset[0]
-    print(f"Image tensor shape: {img_tensor.shape} (expected: [1, 256, 256])")
-    print(f"Seg tensor shape: {seg_tensor.shape} (expected: [1, 256, 256])")
-    print(f"Value range: {img_tensor.min():.2f} to {img_tensor.max():.2f} (expected: 0.00 to 1.00)")
+    print(f"Sample tensor shapes: {img_tensor.shape} | {seg_tensor.shape}")
+    
+    # Test Step 3
+    print("\n=== Testing Step 3: DataLoader ===")
+    train_loader = create_dataloader(
+        split="train",
+        batch_size=8,  # 8 samples per batch
+        shuffle=True,  # Shuffle training data
+        num_workers=2  # Use 2 CPU cores for loading
+    )
+    
+    # Get one batch from the loader
+    first_batch = next(iter(train_loader))
+    batch_images, batch_segs = first_batch
+    
+    # Verify batch properties
+    print(f"Batch size: {batch_images.shape[0]} (expected: 8)")
+    print(f"Batch image shape: {batch_images.shape} (expected: [8, 1, 256, 256])")
+    print(f"Batch seg shape: {batch_segs.shape} (expected: [8, 1, 256, 256])")
+    print(f"Success: DataLoader ready for training!")
     
