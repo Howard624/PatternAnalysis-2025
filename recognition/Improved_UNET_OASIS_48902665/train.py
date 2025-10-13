@@ -12,9 +12,9 @@ from utils import DiceLoss, dice_score # Loss/metric functions
 CONFIG = {
     "device": "cuda" if torch.cuda.is_available() else "cpu",  # Auto-select GPU/CPU
     "epochs": 3,                   # Total training cycles
-    "batch_size": 8,                # Samples per batch (GPU-memory dependent)
-    "lr": 1.5e-4,                     # Initial learning rate
-    "weight_decay": 1e-6,           # L2 regularization to prevent overfitting
+    "batch_size": 4,                # Samples per batch (GPU-memory dependent)
+    "lr": 1e-4,                     # Initial learning rate
+    "weight_decay": 1e-5,           # L2 regularization to prevent overfitting
     "model_save_path": "trained_unet.pth",  # Best model checkpoint
     "plot_save_path": "training_curves.png" # Loss/metric visualization
 }

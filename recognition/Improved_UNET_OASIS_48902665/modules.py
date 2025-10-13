@@ -68,9 +68,10 @@ class ImprovedUNET(nn.Module):
         - Maintains critical skip connections between encoder and decoder (preserves fine details)
     
     Input: Grayscale MRI slice (shape: [batch_size, 1, 256, 256])
-    Output: Binary segmentation mask (shape: [batch_size, 1, 256, 256], values in [0, 1])
+    Output: 4-channel segmentation mask (shape: [batch_size, 4, 256, 256])
+            Each channel corresponds to a tissue class probability
     """
-    def __init__(self, in_channels=1, out_channels=1):
+    def __init__(self, in_channels=1, out_channels=4):  # Updated to 4 output channels
         super(ImprovedUNET, self).__init__()
         # ------------------------------
         # Encoder (Downsampling Path)
@@ -118,8 +119,8 @@ class ImprovedUNET(nn.Module):
         # Final Output Layer
         # Purpose: Generate segmentation mask matching input dimensions
         # ------------------------------
-        self.final_conv = nn.Conv2d(64, out_channels, kernel_size=1)  # 64→1 channel
-        self.sigmoid = nn.Sigmoid()  # Ensures output in [0, 1] (matches normalized ground truth)
+        self.final_conv = nn.Conv2d(64, out_channels, kernel_size=1)  # 64→4 channels (one per class)
+        # Removed sigmoid - using CrossEntropyLoss which includes softmax
 
     def forward(self, x):
         """Forward pass through the network: encoder → bottleneck → decoder → output"""
@@ -149,9 +150,8 @@ class ImprovedUNET(nn.Module):
         dec1 = torch.cat([dec1, enc1], dim=1)        # Merge with enc1 → (128, 256, 256)
         dec1 = self.dec1(dec1)                       # → (64, 256, 256)
         
-        # Generate final segmentation mask
-        out = self.final_conv(dec1)  # (64, 256, 256) → (1, 256, 256)
-        out = self.sigmoid(out)      # Ensure values in [0, 1]
+        # Generate final segmentation mask (4 channels for 4 classes)
+        out = self.final_conv(dec1)  # (64, 256, 256) → (4, 256, 256)
         
         return out
 
@@ -164,19 +164,18 @@ if __name__ == "__main__":
     sample_input = torch.randn(2, 1, 256, 256)
     print(f"Testing ImprovedUNET with input shape: {sample_input.shape}")
     
-    # Initialize model
-    model = ImprovedUNET(in_channels=1, out_channels=1)
+    # Initialize model with 4 output channels
+    model = ImprovedUNET(in_channels=1, out_channels=4)
     
     # Perform forward pass (verify no errors and correct output)
     with torch.no_grad():  # Disable gradient calculation for speed
         output = model(sample_input)
     
     # Validate output properties
-    assert output.shape == sample_input.shape, \
-        f"Output shape mismatch! Expected {sample_input.shape}, got {output.shape}"
-    assert 0.0 <= output.min() and output.max() <= 1.0, \
-        f"Output range invalid! Got {output.min():.2f} to {output.max():.2f} (expected 0.0-1.0)"
+    expected_shape = (2, 4, 256, 256)
+    assert output.shape == expected_shape, \
+        f"Output shape mismatch! Expected {expected_shape}, got {output.shape}"
     
-    print(f"Validation passed! Output shape: {output.shape}, Value range: {output.min():.2f} to {output.max():.2f}")
-    print("ImprovedUNET is ready for training.")
+    print(f"Validation passed! Output shape: {output.shape}")
+    print("ImprovedUNET (4-class) is ready for training.")
     
