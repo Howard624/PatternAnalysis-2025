@@ -11,10 +11,10 @@ from utils import DiceLoss, dice_score # Loss/metric functions
 # Training configuration - adjust based on experiment needs
 CONFIG = {
     "device": "cuda" if torch.cuda.is_available() else "cpu",  # Auto-select GPU/CPU
-    "epochs": 1,                   # Total training cycles
+    "epochs": 3,                   # Total training cycles
     "batch_size": 8,                # Samples per batch (GPU-memory dependent)
     "lr": 1.5e-4,                     # Initial learning rate
-    "weight_decay": 1e-5,           # L2 regularization to prevent overfitting
+    "weight_decay": 1e-6,           # L2 regularization to prevent overfitting
     "model_save_path": "trained_unet.pth",  # Best model checkpoint
     "plot_save_path": "training_curves.png" # Loss/metric visualization
 }
@@ -43,12 +43,13 @@ def init_training():
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=CONFIG["lr"],
-        weight_decay=CONFIG["weight_decay"]
+        weight_decay=CONFIG["weight_decay"],
+        betas=(0.9, 0.999)
     )
     
     # Learning rate scheduler (reduces LR on validation plateau)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=5
+        optimizer, mode="min", factor=0.5, patience=3
     )
     
     # Initialize data loaders for train/val/test splits
