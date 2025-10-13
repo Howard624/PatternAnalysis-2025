@@ -1,53 +1,46 @@
 import torch
 import torch.nn.functional as F
 
-class DiceLoss(torch.nn.Module):
+# KEEP ONLY THIS: Multi-class Dice score (for 4 brain tissues)
+def multi_class_dice_score(predictions, targets, num_classes=4, epsilon=1e-6):
     """
-    Dice Loss for segmentation tasks (optional BCE combination).
-    Dice measures overlap between predicted and target masks (1 = perfect overlap).
-    Includes smoothing to avoid division by zero.
-    """
-    def __init__(self, include_bce=False, bce_weight=0.5, smooth=1e-6):
-        super().__init__()
-        self.include_bce = include_bce  # Combine with BCE loss if True
-        self.bce_weight = bce_weight    # Weight for BCE component
-        self.smooth = smooth            # Smoothing factor
-
-    def forward(self, preds, targets):
-        # Flatten predictions and targets to 1D tensors
-        preds = preds.view(-1)
-        targets = targets.view(-1)
-        
-        # Calculate Dice coefficient
-        intersection = (preds * targets).sum()
-        dice = (2.0 * intersection + self.smooth) / (preds.sum() + targets.sum() + self.smooth)
-        dice_loss = 1.0 - dice  # Minimize loss → maximize overlap
-        
-        # Add BCE loss for better gradient flow if enabled
-        if self.include_bce:
-            bce_loss = F.binary_cross_entropy(preds, targets)
-            return (self.bce_weight * bce_loss) + ((1 - self.bce_weight) * dice_loss)
-        
-        return dice_loss
-
-def dice_score(preds, targets, threshold=0.5, smooth=1e-6):
-    """
-    Calculate Dice score (metric for segmentation quality).
+    Calculate mean Dice score for 4-class brain segmentation (Background, CSF, Gray Matter, White Matter).
+    
     Args:
-        preds: Model outputs (probabilities)
-        targets: Ground-truth masks
-        threshold: Cutoff for converting probabilities to binary (0/1) masks
+        predictions: Model output (4-channel probabilities) → Shape: (batch, 4, H, W)
+        targets: Normalized target masks (1-channel, values 0.0/0.3333/0.6667/1.0) → Shape: (batch, 1, H, W)
+        num_classes: Fixed to 4 (matches OASIS dataset)
+        epsilon: Small value to avoid division by zero
+    
     Returns:
-        Score between 0 (no overlap) and 1 (perfect overlap)
+        mean_dice: Average Dice score across all 4 classes (range: 0-1)
     """
-    # Convert probabilities to binary masks using threshold
-    preds = (preds > threshold).float()
+    # Convert model predictions to class indices (0-3)
+    pred_indices = torch.argmax(predictions, dim=1, keepdim=True)
     
-    # Flatten tensors for easy calculation
-    preds = preds.view(-1)
-    targets = targets.view(-1)
+    # Convert normalized targets to class indices (0-3)
+    target_indices = torch.round(targets * 3).long()
     
-    # Compute Dice score
-    intersection = (preds * targets).sum()
-    return (2.0 * intersection + smooth) / (preds.sum() + targets.sum() + smooth)
+    # One-hot encode both predictions and targets (4 channels)
+    pred_one_hot = F.one_hot(pred_indices.squeeze(1), num_classes=num_classes).permute(0, 3, 1, 2).float()
+    target_one_hot = F.one_hot(target_indices.squeeze(1), num_classes=num_classes).permute(0, 3, 1, 2).float()
     
+    # Calculate Dice per class
+    class_dice = []
+    for class_idx in range(num_classes):
+        pred_class = pred_one_hot[:, class_idx, :, :]
+        target_class = target_one_hot[:, class_idx, :, :]
+        
+        intersection = torch.sum(pred_class * target_class, dim=[1, 2])
+        union = torch.sum(pred_class, dim=[1, 2]) + torch.sum(target_class, dim=[1, 2])
+        
+        dice_per_batch = (2 * intersection + epsilon) / (union + epsilon)
+        class_dice.append(torch.mean(dice_per_batch))
+    
+    # Average across all 4 classes
+    mean_dice = torch.mean(torch.tensor(class_dice))
+    return mean_dice
+
+# Optional: Keep other utilities (e.g., visualization functions) if you use them
+# def plot_segmentation(input_img, pred_mask, true_mask):
+#     # ... (if you need this for debugging)

@@ -8,6 +8,9 @@ from dataset import create_dataloader  # Data loading pipeline
 from modules import ImprovedUNET       # Segmentation model
 from utils import DiceLoss, dice_score # Loss/metric functions
 
+import torch
+import torch.nn as nn
+
 # Training configuration - adjust based on experiment needs
 CONFIG = {
     "device": "cuda" if torch.cuda.is_available() else "cpu",  # Auto-select GPU/CPU
@@ -37,7 +40,7 @@ def init_training():
     model = ImprovedUNET(in_channels=1, out_channels=1).to(CONFIG["device"])
     
     # Loss function: Dice + BCE (balances overlap and pixel-wise errors)
-    criterion = DiceLoss(include_bce=True, bce_weight=0.5)
+    criterion = nn.CrossEntropyLoss()
     
     # Optimizer with regularization
     optimizer = torch.optim.Adam(
