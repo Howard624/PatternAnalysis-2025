@@ -11,9 +11,9 @@ from utils import DiceLoss, dice_score # Loss/metric functions
 # Training configuration - adjust based on experiment needs
 CONFIG = {
     "device": "cuda" if torch.cuda.is_available() else "cpu",  # Auto-select GPU/CPU
-    "epochs": 5,                   # Total training cycles
-    "batch_size": 8,                # Samples per batch (GPU-memory dependent)
-    "lr": 1e-4,                     # Initial learning rate
+    "epochs": 1,                   # Total training cycles
+    "batch_size": 12,                # Samples per batch (GPU-memory dependent)
+    "lr": 1.5e-4,                     # Initial learning rate
     "weight_decay": 1e-5,           # L2 regularization to prevent overfitting
     "model_save_path": "trained_unet.pth",  # Best model checkpoint
     "plot_save_path": "training_curves.png" # Loss/metric visualization
@@ -121,6 +121,32 @@ def test_model(model, criterion, dataloader, device):
     print(f"\nTest Results - Loss: {avg_loss:.4f}, Dice: {avg_dice:.4f}")
     return avg_loss, avg_dice
 
+def plot_curves(train_losses, val_losses, train_dices, val_dices, save_path):
+    """Plot training/validation loss and Dice curves for visualization"""
+    plt.figure(figsize=(12, 5))
+    
+    # Loss curve (lower = better)
+    plt.subplot(1, 2, 1)
+    plt.plot(train_losses, label="Train")
+    plt.plot(val_losses, label="Validation")
+    plt.title("Loss Curves")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    
+    # Dice score curve (higher = better segmentation)
+    plt.subplot(1, 2, 2)
+    plt.plot(train_dices, label="Train")
+    plt.plot(val_dices, label="Validation")
+    plt.title("Dice Score")
+    plt.xlabel("Epoch")
+    plt.ylabel("Score (0-1)")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(save_path)
+    print(f"Curves saved to {save_path}")
+
 def main():
     """Main training pipeline: initialize → train → validate → test → visualize"""
     # Initialize components
@@ -157,6 +183,14 @@ def main():
             best_val_dice = val_dice
             torch.save(model.state_dict(), CONFIG["model_save_path"])
             print(f"Saved best model (Val Dice: {best_val_dice:.4f})")
+    
+    # Generate and save training curves
+    plot_curves(train_losses, val_losses, train_dices, val_dices, CONFIG["plot_save_path"])
+    
+    # Evaluate best model on test set
+    best_model = ImprovedUNET().to(CONFIG["device"])
+    best_model.load_state_dict(torch.load(CONFIG["model_save_path"]))
+    test_model(best_model, criterion, test_loader, CONFIG["device"])
 
 if __name__ == "__main__":
     main()
