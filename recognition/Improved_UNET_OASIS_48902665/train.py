@@ -78,7 +78,7 @@ def train_one_epoch(model, criterion, optimizer, dataloader, device):
         
         # Accumulate metrics (weighted by batch size)
         total_loss += loss.item() * images.size(0)
-        total_dice += dice_score(outputs, masks) * images.size(0)
+        total_dice += dice_score(outputs, masks).cpu() * images.size(0)
     
     # Return averages over entire dataset
     return total_loss / len(dataloader.dataset), total_dice / len(dataloader.dataset)
@@ -97,7 +97,7 @@ def validate_one_epoch(model, criterion, dataloader, device):
             
             # Accumulate metrics
             total_loss += loss.item() * images.size(0)
-            total_dice += dice_score(outputs, masks) * images.size(0)
+            total_dice += dice_score(outputs, masks).cpu() * images.size(0)
     
     return total_loss / len(dataloader.dataset), total_dice / len(dataloader.dataset)
 
