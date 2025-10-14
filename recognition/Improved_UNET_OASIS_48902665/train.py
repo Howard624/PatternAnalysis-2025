@@ -6,7 +6,7 @@ from tqdm import tqdm
 # Import project components
 from dataset import create_dataloader  # Data loading pipeline
 from modules import ImprovedUNET       # Segmentation model
-from utils import DiceLoss, dice_score # Loss/metric functions
+from utils import multi_class_dice_score  # Updated to multi-class Dice
 
 import torch
 import torch.nn as nn
@@ -36,10 +36,10 @@ def init_training():
     # Verify GPU usage first
     verify_gpu_usage()
 
-    # Initialize model and move to target device
-    model = ImprovedUNET(in_channels=1, out_channels=1).to(CONFIG["device"])
+    # Initialize model and move to target device - NOW WITH 4 OUTPUT CHANNELS
+    model = ImprovedUNET(in_channels=1, out_channels=4).to(CONFIG["device"])
     
-    # Loss function: Dice + BCE (balances overlap and pixel-wise errors)
+    # Loss function: CrossEntropy for multi-class segmentation
     criterion = nn.CrossEntropyLoss()
     
     # Optimizer with regularization
@@ -71,9 +71,12 @@ def train_one_epoch(model, criterion, optimizer, dataloader, device):
     for images, masks in tqdm(dataloader, desc="Training"):
         images, masks = images.to(device), masks.to(device)
         
+        # Convert masks to class indices (0-3) for CrossEntropyLoss
+        mask_indices = torch.round(masks * 3).long().squeeze(1)
+        
         # Forward pass: predict masks
         outputs = model(images)
-        loss = criterion(outputs, masks)
+        loss = criterion(outputs, mask_indices)
         
         # Backward pass: update weights
         optimizer.zero_grad()  # Reset gradients
@@ -82,7 +85,7 @@ def train_one_epoch(model, criterion, optimizer, dataloader, device):
         
         # Accumulate metrics (weighted by batch size)
         total_loss += loss.item() * images.size(0)
-        total_dice += dice_score(outputs, masks).cpu() * images.size(0)
+        total_dice += multi_class_dice_score(outputs, masks).cpu() * images.size(0)
     
     # Return averages over entire dataset
     return total_loss / len(dataloader.dataset), total_dice / len(dataloader.dataset)
@@ -96,12 +99,16 @@ def validate_one_epoch(model, criterion, dataloader, device):
     with torch.no_grad():
         for images, masks in tqdm(dataloader, desc="Validation"):
             images, masks = images.to(device), masks.to(device)
+            
+            # Convert masks to class indices (0-3)
+            mask_indices = torch.round(masks * 3).long().squeeze(1)
+            
             outputs = model(images)
-            loss = criterion(outputs, masks)
+            loss = criterion(outputs, mask_indices)
             
             # Accumulate metrics
             total_loss += loss.item() * images.size(0)
-            total_dice += dice_score(outputs, masks).cpu() * images.size(0)
+            total_dice += multi_class_dice_score(outputs, masks).cpu() * images.size(0)
     
     return total_loss / len(dataloader.dataset), total_dice / len(dataloader.dataset)
 
@@ -113,11 +120,15 @@ def test_model(model, criterion, dataloader, device):
     with torch.no_grad():
         for images, masks in tqdm(dataloader, desc="Testing"):
             images, masks = images.to(device), masks.to(device)
+            
+            # Convert masks to class indices (0-3)
+            mask_indices = torch.round(masks * 3).long().squeeze(1)
+            
             outputs = model(images)
-            loss = criterion(outputs, masks)
+            loss = criterion(outputs, mask_indices)
             
             total_loss += loss.item() * images.size(0)
-            total_dice += dice_score(outputs, masks) * images.size(0)
+            total_dice += multi_class_dice_score(outputs, masks).cpu() * images.size(0)
     
     # Calculate and print test metrics
     avg_loss = total_loss / len(dataloader.dataset)
@@ -192,10 +203,9 @@ def main():
     plot_curves(train_losses, val_losses, train_dices, val_dices, CONFIG["plot_save_path"])
     
     # Evaluate best model on test set
-    best_model = ImprovedUNET().to(CONFIG["device"])
+    best_model = ImprovedUNET(in_channels=1, out_channels=4).to(CONFIG["device"])
     best_model.load_state_dict(torch.load(CONFIG["model_save_path"]))
     test_model(best_model, criterion, test_loader, CONFIG["device"])
 
 if __name__ == "__main__":
     main()
-    
