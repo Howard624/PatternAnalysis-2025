@@ -50,8 +50,8 @@ Example Input: A 256×256 grayscale MRI slice from the OASIS dataset (e.g., OAS1
 Segmentation Mask: A 256×256 array where each pixel is labeled 0 (background), 1 (CSF), 2 (GM), or 3 (WM).
 
 ### Plots
-- _test_dice_similairty_score.png: shows the dice similarity of the model for 3 epoch (around 0.97).
-- training_curves.png: shows the dice score and loss curves for train and validation set over 3 epoches. 
+- ![Test Dice Similarity Score](img/test_dice_similarity_score.png): Model Dice coefficient after 3 epochs (≈0.97)
+- ![Training Curves](img/training_curves.png): Training/validation Dice scores and loss curves over 3 epochs
 
 ## Preprocessing 
 - Normalization: MRI pixel values are scaled to [0, 1] using min-max normalization.
