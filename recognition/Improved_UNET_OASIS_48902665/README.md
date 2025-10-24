@@ -32,17 +32,17 @@ Recovers spatial resolution using transposed convolutions (upsampling) while fus
 ### Output Layer:
 A 1×1 convolution reduces the decoder output to 4 channels (one per tissue class). Softmax activation converts these to class probabilities, and argmax selects the most likely class for each pixel.
 
-## figure/visualisation of the solution
+## Figure/visualisation of the solution
 Example is the segmentation_result.png which shows how the model classfies background, CSF, gray matter and white matter. 
 
-## Dependencies required (versions and address reproduciblility of results)
+## Dependencies required
 - Python 3.9.7
 - PyTorch 1.12.1 (for model training/inference)
 - OpenCV 4.5.5 (for image loading/preprocessing)
 - NumPy 1.21.5 (for array operations)
 - Matplotlib 3.5.2 (for visualization)
 
-##  example inputs, outputs and plots of your algorithm
+##  Example inputs, outputs and plots of your algorithm
 ### Inputs
 Example Input: A 256×256 grayscale MRI slice from the OASIS dataset (e.g., OAS1_0001_MR1_slice100.png), with pixel values in [0, 255].
 ### Outputs
@@ -56,7 +56,7 @@ Segmentation Mask: A 256×256 array where each pixel is labeled 0 (background), 
 - Normalization: MRI pixel values are scaled to [0, 1] using min-max normalization.
 - Mask Conversion: Ground truth masks (originally 0, 85, 170, 255 for 4 classes) are normalized to [0, 1] and converted to integer labels (0–3) for cross-entropy loss.
 
-## training, validation and testing splits of the data
+## Training, validation and testing splits of the data
 The OASIS dataset was split according to its original predefined partition (for full MRI and segment), with the following sample counts and corresponding percentages (total samples: 11,328):
 
 - Training: 9,664 slices (85.3%) – Used to update model weights.
