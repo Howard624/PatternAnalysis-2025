@@ -56,9 +56,11 @@ Segmentation Mask: A 256×256 array where each pixel is labeled 0 (background), 
 - Normalization: MRI pixel values are scaled to [0, 1] using min-max normalization.
 - Mask Conversion: Ground truth masks (originally 0, 85, 170, 255 for 4 classes) are normalized to [0, 1] and converted to integer labels (0–3) for cross-entropy loss.
 
-## Training, validation and testing splits of the data
-The OASIS dataset was split according to its original predefined partition (for full MRI and segment), with the following sample counts and corresponding percentages (total samples: 11,328):
+## Training, Validation, and Testing Data Splits
+The OASIS dataset was split using its predefined partition (total samples: 11,328):
 
-- Training: 9,664 slices (85.3%) – Used to update model weights.
-- Validation: 1,120 slices (9.9%) – Used to tune hyperparameters (e.g., learning rate) and select the best model (based on validation Dice).
-- Testing: 544 slices (4.8%) – Held out to evaluate final generalization.
+| Dataset       | Sample Count | Percentage | Purpose                                                                 |
+|--------------|--------------|------------|-------------------------------------------------------------------------|
+| Training     | 9,664        | 85.3%      | Update model weights                                                     |
+| Validation   | 1,120        | 9.9%       | Tune hyperparameters (e.g., learning rate) and select the best model (based on validation Dice score) |
+| Testing      | 544          | 4.8%       | Held out for final generalization evaluation                             |
