@@ -32,8 +32,9 @@ Recovers spatial resolution using transposed convolutions (upsampling) while fus
 ### Output Layer:
 A 1×1 convolution reduces the decoder output to 4 channels (one per tissue class). Softmax activation converts these to class probabilities, and argmax selects the most likely class for each pixel.
 
-## Figure/visualisation of the solution
-Example is the segmentation_result.png which shows how the model classfies background, CSF, gray matter and white matter. 
+## Figure/Visualization of the Solution
+![Brain Segmentation Result](img/segmentation_result.png)  
+(Left: Input MRI slice | Right: Model output—colors correspond to background (black), CSF (blue), GM (green), WM (red))
 
 ## Dependencies required
 - Python 3.9.7
