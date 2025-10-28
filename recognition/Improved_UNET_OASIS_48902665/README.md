@@ -13,7 +13,7 @@ The Improved UNet builds on the original UNet with key enhancements to improve p
 
 The model takes a grayscale 2D MRI slice as input and outputs a 4-channel segmentation mask, where each channel corresponds to a tissue class: background, cerebrospinal fluid (CSF), gray matter (GM), and white matter (WM).
 
-## Problem that the algorithm solves
+## Problem that the algorithm solve
 Accurate segmentation of brain tissues (CSF, GM, WM) from MRI scans is a foundational task in neuroimaging. It enables:
 - Quantification of tissue volumes (e.g., GM atrophy in Alzheimer’s disease).
 - Guiding surgical planning (e.g., targeting WM tracts).
