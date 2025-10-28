@@ -1,4 +1,21 @@
-- name: Generate PDF
-  uses: docker://pandoc/latex:latest
-  run: |
-    pandoc README.md -o README.pdf --pdf-engine=xelatex 
+name: Markdown to PDF  # 工作流名称
+on: [push]  # 触发条件：每次推送代码时自动运行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 运行环境（用Ubuntu系统）
+    
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4  # 这一步是关键！需要先把仓库代码拉到运行环境中，否则找不到README.md
+        
+      - name: 生成PDF
+        uses: docker://pandoc/latex:latest
+        run: |
+          pandoc README.md -o README.pdf --pdf-engine=xelatex  # 转换命令（确保README.md在仓库根目录）
+          
+      - name: 保存PDF到仓库
+        uses: stefanzweifel/git-auto-commit-action@v5  # 自动提交生成的PDF到仓库
+        with:
+          commit_message: "自动生成PDF"
+          file_pattern: "README.pdf"  # 指定要提交的文件
