@@ -22,13 +22,17 @@ Accurate segmentation of brain tissues (CSF, GM, WM) from MRI scans is a foundat
 
 ## How the algorithm works
 The Improved UNet follows an "encoder-decoder" architecture with three key components:
+
 ### Encoder (Downsampling Pathway):
 Converts the input MRI slice (256×256) into progressively smaller, context-rich feature maps via stacked residual blocks and max-pooling.
 Each residual block uses two 3×3 convolutions with batch normalization and ReLU activation, followed by a shortcut connection to preserve low-level features.
+
 #### Bottleneck:
 The deepest layer of the network, where high-level contextual features (e.g., global brain structure) are integrated.
+
 ### Decoder (Upsampling Pathway):
 Recovers spatial resolution using transposed convolutions (upsampling) while fusing features from corresponding encoder layers via skip connections. This combines local details (e.g., tissue edges) with global context.
+
 ### Output Layer:
 A 1×1 convolution reduces the decoder output to 4 channels (one per tissue class). Softmax activation converts these to class probabilities, and argmax selects the most likely class for each pixel.
 
@@ -44,13 +48,15 @@ A 1×1 convolution reduces the decoder output to 4 channels (one per tissue clas
 - Matplotlib 3.5.2 (for visualization)
 
 ##  Example inputs, outputs and plots of your algorithm
+
 ### Inputs
 Example Input: A 256×256 grayscale MRI slice from the OASIS dataset (e.g., OAS1_0001_MR1_slice100.png), with pixel values in [0, 255].
+
 ### Outputs
 Segmentation Mask: A 256×256 array where each pixel is labeled 0 (background), 1 (CSF), 2 (GM), or 3 (WM).
 
 ### Plots
-- ![Test Dice Similarity Score](img/_test_dice_similarity_score.png): Model Dice coefficient after 3 epochs (≈0.97)
+- ![Test Dice Similarity Score](img/_test_dice_similarity_score.png): Model Dice coefficient after 3 epochs (approx. 0.97)
 - ![Training Curves](img/training_curves.png): Training/validation Dice scores and loss curves over 3 epochs
 
 ## Preprocessing 
