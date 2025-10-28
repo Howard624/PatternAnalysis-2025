@@ -1,0 +1,4 @@
+- name: Generate PDF
+  uses: docker://pandoc/latex:latest
+  run: |
+    pandoc README.md -o README.pdf --pdf-engine=xelatex 
